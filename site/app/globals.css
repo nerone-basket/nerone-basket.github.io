@@ -472,6 +472,9 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
 .footer-brand p { margin: 18px 0 0; color: rgba(255,255,255,.55); }
 .site-footer nav { display: grid; grid-template-columns: repeat(2, auto); gap: 12px 42px; align-content: start; font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .footer-note { grid-column: 1 / -1; margin: 36px 0 0; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.16); color: rgba(255,255,255,.42); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+.footer-credit { float: right; color: rgba(255,255,255,.55); font-weight: 600; letter-spacing: .045em; text-transform: none; }
+.footer-credit a:hover, .footer-credit a:focus-visible { color: #fff; text-decoration: underline; }
+@media (max-width: 640px) { .footer-credit { display: block; float: none; margin-top: 8px; } }
 
 .section-heading h2,
 .competition-card h3,
