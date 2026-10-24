@@ -12,6 +12,12 @@ export function editYaml(source: string, patch: Record<string, unknown>): string
   return String(document);
 }
 
+export function playerSocialUrls(document: ReturnType<typeof parseDocument>): string[] {
+  // YAML collections are YAMLSeq nodes, not JavaScript arrays. Convert before rendering.
+  const value = (document.toJS() as Record<string, unknown> | null)?.social_urls;
+  return Array.isArray(value) ? value.filter((url): url is string => typeof url === 'string') : [];
+}
+
 export type NewsDocument = { metadata: Record<string, unknown>; body: string; update: (patch: Record<string, unknown>, body: string) => string };
 
 export function parseNews(source: string): NewsDocument {

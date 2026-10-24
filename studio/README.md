@@ -1,4 +1,4 @@
-# WebMAKER Studio 0.1
+# WebMAKER Studio 0.1.1
 
 App Windows locale per aggiornare i contenuti del sito Nerone Basket Anzio. Il sito pubblico rimane in `site/` e GitHub Pages continua a pubblicare il branch `main` con il workflow esistente.
 
