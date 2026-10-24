@@ -69,15 +69,42 @@ fn valid_time(value: &str) -> bool {
 pub fn validate(root: &Path) -> ValidationReport {
     let mut report = ValidationReport::default();
     let mut competition_pairs = HashSet::new();
+    let mut participating_teams = Vec::new();
     match yaml(&root.join("site/data/competitions.yaml")) {
-        Ok(config) => if let Some(seasons) = config.get("seasons").and_then(Value::as_sequence) {
-            for season in seasons {
-                if let (Some(season_id), Some(competitions)) = (field(season, "id"), season.get("competitions").and_then(Value::as_sequence)) {
+        Ok(config) => {
+            let current = field(&config, "current_season").unwrap_or("");
+            let mut season_ids = HashSet::new();
+            if let Some(seasons) = config.get("seasons").and_then(Value::as_sequence) {
+                for season in seasons {
+                    let Some(season_id) = field(season, "id") else { report.errors.push("Stagione senza ID in competitions.yaml.".into()); continue; };
+                    if !season_ids.insert(season_id.to_string()) { report.errors.push(format!("Stagione duplicata: {season_id}.")); }
+                    if season_id.len() != 7 || !season_id.chars().enumerate().all(|(index, ch)| if index == 4 { ch == '-' } else { ch.is_ascii_digit() }) {
+                        report.errors.push(format!("ID stagione non valido: {season_id}."));
+                    }
+                    let Some(competitions) = season.get("competitions").and_then(Value::as_sequence) else { report.errors.push(format!("{season_id}: elenco campionati mancante.")); continue; };
+                    if season_id == current && competitions.is_empty() { report.errors.push(format!("La stagione corrente {season_id} non ha campionati.")); }
                     for competition in competitions {
-                        if let Some(competition_id) = field(competition, "id") { competition_pairs.insert(format!("{season_id}/{competition_id}")); }
+                        let Some(competition_id) = field(competition, "id") else { report.errors.push(format!("{season_id}: campionato senza ID.")); continue; };
+                        if competition_id.is_empty() || competition_id.starts_with('-') || competition_id.ends_with('-')
+                            || !competition_id.chars().all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-') {
+                            report.errors.push(format!("ID campionato non valido: {competition_id}."));
+                        }
+                        let pair = format!("{season_id}/{competition_id}");
+                        if !competition_pairs.insert(pair.clone()) { report.errors.push(format!("Campionato duplicato: {pair}.")); }
+                        if field(competition, "name").unwrap_or("").trim().is_empty() { report.errors.push(format!("{pair}: nome mancante.")); }
+                        if let Some(team) = field(competition, "team") { participating_teams.push((pair.clone(), team.to_string())); }
+                        if let Some(ids) = competition.get("teams").and_then(Value::as_sequence) {
+                            for team in ids.iter().filter_map(Value::as_str) { participating_teams.push((pair.clone(), team.to_string())); }
+                        }
+                        for key in ["win", "loss"] {
+                            if let Some(value) = competition.get("standings_points").and_then(|points| points.get(key)) {
+                                if !value.is_null() && value.as_u64().is_none() { report.errors.push(format!("{pair}: punti {key} non validi.")); }
+                            }
+                        }
                     }
                 }
-            }
+                if !season_ids.contains(current) { report.errors.push(format!("Stagione corrente {current} non configurata.")); }
+            } else { report.errors.push("competitions.yaml non contiene stagioni.".into()); }
         },
         Err(error) => report.errors.push(error),
     }
@@ -86,6 +113,7 @@ pub fn validate(root: &Path) -> ValidationReport {
         Err(error) => { report.errors.push(error); HashSet::new() }
     };
     if teams.is_empty() { report.errors.push("teams.yaml non contiene squadre.".into()); }
+    for (pair, team) in participating_teams { if !teams.contains(&team) { report.errors.push(format!("{pair}: squadra partecipante sconosciuta {team}.")); } }
     let mut players = HashSet::new();
     for path in data_files(root, "site/data/players", "yaml") {
         match yaml(&path) {
@@ -190,6 +218,7 @@ pub fn validate_project(state: tauri::State<'_, ProjectState>) -> Result<Validat
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
     #[test]
     fn rejects_impossible_dates_and_times() {
         assert!(valid_date("2028-02-29"));
@@ -204,5 +233,20 @@ mod tests {
         assert!(report.errors.is_empty(), "{:?}", report.errors);
         assert!(report.games > 0);
         assert!(report.players > 0);
+    }
+    #[test]
+    fn invalid_competition_configuration_is_blocked_before_publish() {
+        let temp = std::env::temp_dir().join(format!("webmaker-config-{}", Uuid::new_v4()));
+        fs::create_dir_all(temp.join("site/data")).unwrap();
+        let root = temp.canonicalize().unwrap();
+        fs::write(root.join("site/data/teams.yaml"), "nerone:\n  name: Nerone\n").unwrap();
+        fs::write(root.join("site/data/rosters.csv"), "season,competition,team_id,player_id,number\n").unwrap();
+        fs::write(root.join("site/data/competitions.yaml"), "current_season: 2028-29\nseasons:\n  - id: 2027-28\n    competitions:\n      - id: gold\n        name: Gold\n        teams: [sconosciuta]\n      - id: gold\n        name: Doppio\n").unwrap();
+        let report = validate(&root);
+        assert!(report.errors.iter().any(|error| error.contains("Campionato duplicato")));
+        assert!(report.errors.iter().any(|error| error.contains("Stagione corrente")));
+        assert!(report.errors.iter().any(|error| error.contains("squadra partecipante sconosciuta")));
+        assert!(root.starts_with(std::env::temp_dir().canonicalize().unwrap()));
+        fs::remove_dir_all(root).unwrap();
     }
 }

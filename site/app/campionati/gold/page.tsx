@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: 'Amatori UISP' };
 export const dynamic = 'force-static';
 
 export default function GoldPage() {
-  const season = getLatestSeasonForCompetition(competitions[0].slug);
-  return <CompetitionPageView competition={competitions[0]} seasonId={season?.id ?? '2026-27'} />;
+  const competition = competitions.find((item) => item.slug === 'gold') ?? competitions[0];
+  const season = getLatestSeasonForCompetition(competition.slug);
+  return <CompetitionPageView competition={competition} seasonId={season?.id ?? '2026-27'} />;
 }

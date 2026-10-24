@@ -147,8 +147,26 @@ pub fn list_files(kind: String, state: tauri::State<'_, ProjectState>) -> Result
     if kind != "teams" {
         files.extend(draft_paths(&root)?.into_iter().filter(|path| path.starts_with(&format!("{prefix}/"))));
     }
+    if kind == "games" || kind == "stats" { files.extend(configured_archive_paths(&root, &kind)?); }
     files.sort(); files.dedup();
     Ok(files)
+}
+
+fn configured_archive_paths(root: &Path, kind: &str) -> Result<Vec<String>, String> {
+    let source = fs::read_to_string(root.join("site/data/competitions.yaml")).map_err(|error| error.to_string())?;
+    let config: serde_yaml::Value = serde_yaml::from_str(&source).map_err(|error| format!("Campionati YAML non validi: {error}"))?;
+    let folder = if kind == "games" { "games" } else { "player-stats" };
+    let mut paths = Vec::new();
+    for season in config.get("seasons").and_then(serde_yaml::Value::as_sequence).into_iter().flatten() {
+        let Some(season_id) = season.get("id").and_then(serde_yaml::Value::as_str) else { continue; };
+        for competition in season.get("competitions").and_then(serde_yaml::Value::as_sequence).into_iter().flatten() {
+            let Some(competition_id) = competition.get("id").and_then(serde_yaml::Value::as_str) else { continue; };
+            let path = format!("site/data/{folder}/{season_id}/{competition_id}.csv");
+            relative_path(root, &path)?;
+            paths.push(path);
+        }
+    }
+    Ok(paths)
 }
 
 #[derive(Serialize)]
@@ -212,5 +230,16 @@ mod tests {
         assert!(!catalog.teams.is_empty());
         assert!(!catalog.players.is_empty());
         assert!(!catalog.games.is_empty());
+    }
+    #[test]
+    fn configured_competition_archives_are_available_even_before_csv_exists() {
+        let temp = std::env::temp_dir().join(format!("webmaker-archives-{}", Uuid::new_v4()));
+        fs::create_dir_all(temp.join("site/data")).unwrap();
+        let root = temp.canonicalize().unwrap();
+        fs::write(root.join("site/data/competitions.yaml"), "seasons:\n  - id: 2027-28\n    competitions:\n      - id: silver\n        name: Silver\n").unwrap();
+        assert_eq!(configured_archive_paths(&root, "games").unwrap(), vec!["site/data/games/2027-28/silver.csv"]);
+        assert_eq!(configured_archive_paths(&root, "stats").unwrap(), vec!["site/data/player-stats/2027-28/silver.csv"]);
+        assert!(root.starts_with(std::env::temp_dir().canonicalize().unwrap()));
+        fs::remove_dir_all(root).unwrap();
     }
 }

@@ -1,10 +1,13 @@
 import Link from '@/components/site-link';
 import { Menu } from 'lucide-react';
 import { assetPath, sitePath } from '@/lib/paths';
+import { sportsData } from '@/lib/generated-data';
+import { archivePath } from '@/lib/site-data';
 
+const primaryCompetition = sportsData.competitions[0]?.id ?? 'platinum';
 const links = [
-  { href: '/campionato/27', label: 'Campionato' },
-  { href: '/partite/27', label: 'Partite' },
+  { href: archivePath('campionato', primaryCompetition, sportsData.season), label: 'Campionato' },
+  { href: archivePath('partite', primaryCompetition, sportsData.season), label: 'Partite' },
   { href: '/calendario', label: 'Calendario' },
   { href: '/roster', label: 'Roster' },
   { href: '/notizie', label: 'Notizie' },
@@ -29,7 +32,7 @@ export function SiteHeader({ light = false }: { light?: boolean }) {
       <nav className="desktop-nav" aria-label="Navigazione principale">
         {links.map((link) => <Link href={sitePath(link.href)} key={link.href}>{link.label}</Link>)}
       </nav>
-      <span className="season-chip">2026 / 27</span>
+      <span className="season-chip">{sportsData.season.replace('-', ' / ')}</span>
       <details className="mobile-menu">
         <summary aria-label="Apri il menu"><Menu size={22} /></summary>
         <nav aria-label="Navigazione mobile">

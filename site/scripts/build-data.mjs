@@ -197,7 +197,12 @@ const sitemapRoutes = [...new Set([
   '/roster',
   '/notizie',
   '/club',
-  ...seasons.flatMap((season) => [`/campionato/${seasonRouteId(season.id)}`, `/partite/${seasonRouteId(season.id)}`]),
+  ...seasons.flatMap((season) => season.competitions.flatMap((competition) => {
+    const route = season.competitions.length === 1
+      ? seasonRouteId(season.id)
+      : `${competition.id}/${seasonRouteId(season.id)}`;
+    return [`/campionato/${route}`, `/partite/${route}`];
+  })),
   ...['nerone', 'nerone-bounganvillae'].map((teamId) => `/roster/${teamId}`),
   ...players.map((player) => `/giocatori/${player.id}`),
   ...seasons.flatMap((season) => season.competitions.flatMap((competition) => competition.games

@@ -7,7 +7,7 @@ import { sportsData } from '@/lib/generated-data';
 import { assetPath } from '@/lib/paths';
 import { GamesPageView } from '@/components/games-page-view';
 import { getArchiveCompetitionIds, getLatestSeasonForCompetition } from '@/lib/archive-data';
-import { competitions, getCompetition, isClubTeam, seasonRouteId } from '@/lib/site-data';
+import { getCompetition, isClubTeam, seasonRouteId } from '@/lib/site-data';
 import { SocialEmbeds } from '@/components/social-embeds';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -32,7 +32,7 @@ export function generateStaticParams() {
 
 function resolveGamesArchive(value: string) {
   const season = sportsData.seasons.find((item) => seasonRouteId(item.id) === value);
-  if (season) return { competition: competitions[0], season };
+  if (season) return { competition: getCompetition(season.competitions[0]?.id), season };
 
   const competition = getCompetition(value);
   return { competition, season: competition ? getLatestSeasonForCompetition(competition.slug) : undefined };

@@ -4,13 +4,14 @@ import { marked } from 'marked';
 import { parseDocument } from 'yaml';
 import { call, type BackupResult, type Catalog, type Draft, type ProjectInfo, type PublicationPreview, type PublicationResult, type ValidationReport } from './lib/api';
 import { CsvDocument } from './lib/csv';
-import { editYaml, parseNews, playerSocialUrls, safeSlug } from './lib/content';
+import { addCompetition, addSeason, addTeam, editCompetition, editYaml, parseNews, playerSocialUrls, readCompetitionConfig, safeSlug, setCurrentSeason } from './lib/content';
 
-type Section = 'dashboard' | 'games' | 'teams' | 'players' | 'rosters' | 'stats' | 'news' | 'media' | 'backup' | 'publish';
+type Section = 'dashboard' | 'games' | 'teams' | 'competitions' | 'players' | 'rosters' | 'stats' | 'news' | 'media' | 'backup' | 'publish';
 const sections: { id: Section; label: string; group: string }[] = [
   { id: 'dashboard', label: 'Panoramica', group: 'Studio' },
   { id: 'games', label: 'Partite', group: 'Contenuti' },
   { id: 'teams', label: 'Squadre', group: 'Contenuti' },
+  { id: 'competitions', label: 'Campionati', group: 'Contenuti' },
   { id: 'players', label: 'Giocatori', group: 'Contenuti' },
   { id: 'rosters', label: 'Roster', group: 'Contenuti' },
   { id: 'stats', label: 'Statistiche', group: 'Contenuti' },
@@ -32,6 +33,10 @@ const preferredFields: Record<'games' | 'stats' | 'rosters', string[]> = {
   stats: ['game_id', 'player_id', 'minutes', 'points', 'three_pointers_made', 'two_pointers_made', 'free_throws_made', 'fouls', 'rebounds_off', 'rebounds_def', 'assists', 'turnovers'],
   rosters: ['season', 'competition', 'team_id', 'player_id', 'number', 'role', 'active'],
 };
+const newCsvHeaders = {
+  games: 'id,date,time,status,home_team,away_team,home_score,away_score,venue,address,instagram_url,youtube_url,notes,phase,round\n',
+  stats: 'game_id,player_id,minutes,points,three_pointers_made,two_pointers_made,free_throws_made,fouls,rebounds_off,rebounds_def,assists,turnovers\n',
+};
 
 function formatTime(value: string | null): string {
   return value ? new Date(Number(value) * 1000).toLocaleString('it-IT') : 'mai in questa copia';
@@ -50,6 +55,15 @@ export function App() {
   const [savedContent, setSavedContent] = useState('');
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState('');
+  const [selectedSeason, setSelectedSeason] = useState('');
+  const [selectedCompetition, setSelectedCompetition] = useState('');
+  const [newTeamId, setNewTeamId] = useState('');
+  const [newTeamName, setNewTeamName] = useState('');
+  const [newTeamShortName, setNewTeamShortName] = useState('');
+  const [newSeasonId, setNewSeasonId] = useState('');
+  const [newCompetitionId, setNewCompetitionId] = useState('');
+  const [newCompetitionName, setNewCompetitionName] = useState('');
+  const [newCompetitionTeams, setNewCompetitionTeams] = useState<string[]>([]);
   const [filter, setFilter] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
@@ -125,9 +139,12 @@ export function App() {
       const disk = await call<string>('read_project_file', { relative });
       const draft = await call<Draft | null>('read_draft', { relative });
       const recovered = draft && draft.content !== disk;
-      setFile(relative); setSavedContent(disk); setContent(recovered ? draft.content : disk);
-      setSelectedRow(null); setSelectedTeam(''); history.current = [];
+      const starter = !disk && relative.startsWith('site/data/games/') ? newCsvHeaders.games
+        : !disk && relative.startsWith('site/data/player-stats/') ? newCsvHeaders.stats : disk;
+      setFile(relative); setSavedContent(disk); setContent(recovered ? draft.content : starter);
+      setSelectedRow(null); setSelectedTeam(''); setSelectedSeason(''); setSelectedCompetition(''); history.current = [];
       if (recovered) setNotice(`Bozza locale recuperata (${formatTime(String(draft.savedAt))}). Usa “Salva sul PC” per applicarla.`);
+      else if (!disk && starter) setNotice('Archivio nuovo: aggiungi i record e salva sul PC per creare il CSV.');
     });
   }
   async function go(next: Section) {
@@ -136,6 +153,7 @@ export function App() {
     if (!project) return;
     if (next === 'rosters') { await loadFile('site/data/rosters.csv'); return; }
     if (next === 'teams') { await loadFile('site/data/teams.yaml'); return; }
+    if (next === 'competitions') { await loadFile('site/data/competitions.yaml'); return; }
     const kind = next === 'games' ? 'games' : next === 'stats' ? 'stats' : next === 'players' ? 'players' : next === 'news' ? 'news' : '';
     if (kind) await run(async () => { setFiles(await call<string[]>('list_files', { kind })); });
     if (next === 'publish') await run(async () => { await refreshProject(); setValidation(await call<ValidationReport>('validate_project')); });
@@ -188,6 +206,31 @@ export function App() {
         doc.setIn([nested, key], value); change(String(doc));
       } else change(editYaml(content, { [key]: value }));
     } catch (cause) { setError(String(cause)); }
+  }
+  function applyContent(edit: () => string) {
+    try { setError(''); change(edit()); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  }
+  function createTeam() {
+    const id = newTeamId.trim();
+    try {
+      change(addTeam(content, id, newTeamName, newTeamShortName));
+      setSelectedTeam(id); setNewTeamId(''); setNewTeamName(''); setNewTeamShortName(''); setError('');
+      setNotice('Squadra aggiunta alla bozza. Salva sul PC prima di usarla in un campionato o in una partita.');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  }
+  function createSeason() {
+    const id = newSeasonId.trim();
+    try { change(addSeason(content, id)); setSelectedSeason(id); setSelectedCompetition(''); setNewSeasonId(''); setError(''); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
+  }
+  function createCompetition() {
+    const id = newCompetitionId.trim();
+    try {
+      change(addCompetition(content, activeSeasonId, id, newCompetitionName, newCompetitionTeams));
+      setSelectedCompetition(id); setNewCompetitionId(''); setNewCompetitionName(''); setNewCompetitionTeams([]); setError('');
+      setNotice('Campionato aggiunto alla bozza. Dopo il salvataggio potrai aprire i relativi archivi Partite e Statistiche.');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   }
   function updateNewsField(key: string, value: unknown, body?: string) {
     try { if (news) change(news.update({ [key]: value }, body ?? news.body)); } catch (cause) { setError(String(cause)); }
@@ -269,6 +312,13 @@ export function App() {
   const selected = selectedRow === null || !csv ? null : csv.get(selectedRow);
   const teamDoc = section === 'teams' && content ? parseDocument(content) : null;
   const teamIds = teamDoc?.contents && 'items' in teamDoc.contents ? (teamDoc.contents.items as { key: { value?: unknown } }[]).map((item) => String(item.key.value ?? '')).filter(Boolean) : [];
+  const competitionConfig = section === 'competitions' && content ? readCompetitionConfig(content) : null;
+  const activeSeasonId = selectedSeason || competitionConfig?.current_season || competitionConfig?.seasons[0]?.id || '';
+  const activeSeason = competitionConfig?.seasons.find((season) => season.id === activeSeasonId);
+  const activeCompetitionId = selectedCompetition || activeSeason?.competitions[0]?.id || '';
+  const activeCompetition = activeSeason?.competitions.find((competition) => competition.id === activeCompetitionId);
+  const activeCompetitionTeams = activeCompetition?.teams ?? (activeCompetition?.team ? [activeCompetition.team] : []);
+  const clubTeamOptions = [...new Set([...catalog.teams.filter((id) => id.startsWith('nerone')), ...activeCompetitionTeams])];
   const playerDoc = section === 'players' && content ? parseDocument(content) : null;
 
   return <div className="studio-shell">
@@ -279,7 +329,7 @@ export function App() {
         {(index === 0 || item.group !== sections[index - 1].group) && <p className="nav-group">{item.group}</p>}
         <button type="button" className={section === item.id ? 'active' : ''} onClick={() => void go(item.id)} disabled={!project && item.id !== 'dashboard'}>{item.label}{item.id === 'publish' && project?.changedFiles.length ? <b>{project.changedFiles.length}</b> : null}</button>
       </div>)}</nav>
-      <div className="sidebar-bottom"><span>v0.1.1 · desktop locale</span><span>Ctrl+S per salvare</span></div>
+      <div className="sidebar-bottom"><span>v0.2.0 · desktop locale</span><span>Ctrl+S per salvare</span></div>
     </aside>
     <main className="workspace">
       <header className="workspace-top"><div><span className="eyebrow">WebMAKER Studio</span><h1>{sections.find((item) => item.id === section)?.label}</h1></div><div className="top-actions"><span className="local-badge">{dirty ? 'Bozza non applicata' : 'Dati locali'}</span>{file && <><button className="button subtle" onClick={undo} disabled={!history.current.length}>Annulla</button><button className="button primary" onClick={() => void saveFile()} disabled={!dirty || busy}>Salva sul PC</button></>}</div></header>
@@ -294,7 +344,44 @@ export function App() {
 
       {project && csvKind && csv && <div className="editor-layout"><div className="record-list"><div className="record-list-head"><input type="search" placeholder="Cerca…" value={filter} onChange={(event) => setFilter(event.target.value)} /><button title="Aggiungi record" onClick={addCsvRow}>+</button></div><small className="count">{filteredRows.length} record · {fileTitle(file)}</small><div className="record-scroll">{filteredRows.map((index) => { const row = csv.get(index); const title = csvKind === 'games' ? `${row.home_team || 'Casa'} / ${row.away_team || 'Trasferta'}` : csvKind === 'stats' ? `${row.player_id || 'Giocatore'} / ${row.game_id || 'Partita'}` : `${row.player_id || 'Giocatore'} / ${row.team_id || 'Squadra'}`; return <button key={`${index}-${row.id || row.player_id}`} className={selectedRow === index ? 'selected' : ''} onClick={() => setSelectedRow(index)}><small>{row.date || row.season || row.game_id || 'NUOVO'}</small><strong>{title}</strong><span>{row.status || row.number || row.points || ''}</span></button>; })}</div></div><div className="panel record-editor">{selected ? <><div className="panel-heading"><div><span className="eyebrow">{csvKind === 'games' ? 'Scheda partita' : csvKind === 'stats' ? 'Dato inserito' : 'Iscrizione roster'}</span><h2>{csvKind === 'games' ? 'Dettagli partita' : csvKind === 'stats' ? 'Statistiche giocatore' : 'Giocatore in squadra'}</h2></div></div><div className="form-grid">{[...preferredFields[csvKind], ...csv.columns.filter((column) => !preferredFields[csvKind].includes(column))].filter((column) => csv.columns.includes(column)).map((column) => <label key={column} className={['notes', 'instagram_url', 'youtube_url', 'address'].includes(column) ? 'wide' : ''}><span>{fieldLabels[column] || column}</span>{(column === 'home_team' || column === 'away_team' || column === 'team_id') ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.teams.map((id) => <option key={id}>{id}</option>)}</select> : column === 'player_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.players.map((id) => <option key={id}>{id}</option>)}</select> : column === 'game_id' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="">Seleziona…</option>{catalog.games.map((id) => <option key={id}>{id}</option>)}</select> : column === 'status' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}>{['scheduled', 'played', 'final'].map((item) => <option key={item}>{item}</option>)}</select> : column === 'active' ? <select value={selected[column]} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)}><option value="true">Sì</option><option value="false">No</option></select> : <input value={selected[column] ?? ''} type={column === 'date' ? 'date' : column === 'time' ? 'time' : 'text'} readOnly={column === 'id' && savedContent.includes(selected.id)} onChange={(event) => updateCsv(selectedRow!, column, event.target.value)} />}</label>)}</div>{csvKind === 'stats' && <p className="hint">Questi sono i valori inseriti nel CSV. Le medie e i totali vengono calcolati dal sito durante la build.</p>}</> : <div className="empty-selection"><strong>Seleziona un record</strong><p>Apri una riga dall’elenco o creane una nuova. Le modifiche restano in bozza fino a “Salva sul PC”.</p></div>}{csvKind === 'stats' && <button className="button subtle" onClick={() => void importStats()}>Importa CSV · aggiungi solo record nuovi</button>}</div></div>}
 
-      {project && section === 'teams' && file && <div className="panel narrow"><div className="panel-heading"><h2>Squadre esistenti</h2><span>{teamIds.length} squadre</span></div><div className="team-tabs">{teamIds.map((id) => <button key={id} className={selectedTeam === id ? 'active' : ''} onClick={() => setSelectedTeam(id)}>{id}</button>)}</div>{selectedTeam ? <div className="form-grid">{['name', 'short_name', 'logo', 'logo_on_dark'].map((key) => <label key={key}><span>{key === 'name' ? 'Nome completo' : key === 'short_name' ? 'Nome breve' : key === 'logo' ? 'Logo su chiaro' : 'Logo su scuro'}</span><input value={String(teamDoc?.getIn([selectedTeam, key]) ?? '')} onChange={(event) => updateYamlField(key, event.target.value, selectedTeam)} /></label>)}</div> : <p>Seleziona una squadra. Gli ID restano invariati per mantenere tutti i collegamenti.</p>}</div>}
+      {project && section === 'teams' && file && <div className="entity-stack narrow">
+        <div className="panel"><div className="panel-heading"><h2>Squadre</h2><span>{teamIds.length} squadre</span></div>
+          <div className="team-tabs">{teamIds.map((id) => <button key={id} className={selectedTeam === id ? 'active' : ''} onClick={() => setSelectedTeam(id)}>{id}</button>)}</div>
+          {selectedTeam ? <><p className="hint">ID stabile: <code>{selectedTeam}</code>. Non cambia, perché è usato in partite e roster.</p><div className="form-grid">{['name', 'short_name', 'logo', 'logo_on_dark'].map((key) => <label key={key}><span>{key === 'name' ? 'Nome completo' : key === 'short_name' ? 'Nome breve' : key === 'logo' ? 'Logo su chiaro' : 'Logo su scuro'}</span><input value={String(teamDoc?.getIn([selectedTeam, key]) ?? '')} onChange={(event) => updateYamlField(key, event.target.value, selectedTeam)} /></label>)}</div></> : <p>Seleziona una squadra per modificarla, oppure aggiungine una qui sotto.</p>}
+        </div>
+        <div className="panel"><span className="eyebrow">Nuova squadra</span><h2>Aggiungi squadra</h2><div className="form-grid">
+          <label><span>ID stabile (es. samurai-aprilia)</span><input value={newTeamId} onChange={(event) => setNewTeamId(event.target.value)} placeholder="nuova-squadra" /></label>
+          <label><span>Nome completo</span><input value={newTeamName} onChange={(event) => setNewTeamName(event.target.value)} placeholder="Nome ufficiale" /></label>
+          <label><span>Nome breve</span><input value={newTeamShortName} onChange={(event) => setNewTeamShortName(event.target.value)} placeholder="Nome nel tabellone" /></label>
+        </div><p className="hint">Dopo averla aggiunta alla bozza, selezionala sopra per impostare i loghi. Le immagini si importano da “Immagini”.</p><button className="button primary" onClick={createTeam}>Aggiungi alla bozza</button></div>
+      </div>}
+
+      {project && section === 'competitions' && file && competitionConfig && <div className="entity-stack narrow">
+        <div className="panel"><span className="eyebrow">Stagioni</span><h2>Stagione da gestire</h2><div className="form-grid">
+          <label><span>Stagione</span><select value={activeSeasonId} onChange={(event) => { setSelectedSeason(event.target.value); setSelectedCompetition(''); }}>
+            {competitionConfig.seasons.map((season) => <option key={season.id} value={season.id}>{season.id}</option>)}
+          </select></label>
+          <label><span>Stagione corrente del sito</span><select value={competitionConfig.current_season} onChange={(event) => applyContent(() => setCurrentSeason(content, event.target.value))}>
+            {competitionConfig.seasons.map((season) => <option key={season.id} value={season.id}>{season.id}</option>)}
+          </select></label>
+        </div><p className="hint">Selezionare una stagione qui serve solo a gestirla; cambiare “Stagione corrente” modifica la stagione mostrata per prima sul sito.</p>
+          <div className="entity-create"><label><span>Nuova stagione (AAAA-AA)</span><input value={newSeasonId} onChange={(event) => setNewSeasonId(event.target.value)} placeholder="2027-28" /></label><button className="button subtle" onClick={createSeason}>Aggiungi stagione</button></div>
+        </div>
+        {activeSeason && <div className="panel"><div className="panel-heading"><div><span className="eyebrow">{activeSeason.id}</span><h2>Campionati</h2></div><span>{activeSeason.competitions.length} campionati</span></div>
+          <div className="team-tabs">{activeSeason.competitions.map((competition) => <button key={competition.id} className={activeCompetitionId === competition.id ? 'active' : ''} onClick={() => setSelectedCompetition(competition.id)}>{competition.name || competition.id}</button>)}</div>
+          {activeCompetition ? <><p className="hint">ID stabile: <code>{activeCompetition.id}</code>. Mantenerlo evita di scollegare partite, classifiche e statistiche storiche.</p><div className="form-grid">
+            <label className="wide"><span>Nome del campionato</span><input value={activeCompetition.name ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { name: event.target.value }))} /></label>
+            <label><span>Punti per vittoria (vuoto = solo vittorie)</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.win ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { win: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+            <label><span>Punti per sconfitta</span><input type="number" min="0" step="1" value={activeCompetition.standings_points?.loss ?? ''} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { loss: event.target.value === '' ? null : Number(event.target.value) }))} /></label>
+          </div><div className="entity-checks"><strong>Squadre Nerone partecipanti</strong><div className="checkbox-grid">{clubTeamOptions.map((id) => <label key={id}><input type="checkbox" checked={activeCompetitionTeams.includes(id)} onChange={(event) => applyContent(() => editCompetition(content, activeSeasonId, activeCompetitionId, { teams: event.target.checked ? [...activeCompetitionTeams, id] : activeCompetitionTeams.filter((team) => team !== id) }))} />{id}</label>)}</div></div></> : <p>Nessun campionato in questa stagione. Aggiungine uno sotto.</p>}
+        </div>}
+        {activeSeason && <div className="panel"><span className="eyebrow">Nuovo campionato · {activeSeasonId}</span><h2>Aggiungi campionato</h2><div className="form-grid">
+          <label><span>ID stabile (es. gold)</span><input value={newCompetitionId} onChange={(event) => setNewCompetitionId(event.target.value)} placeholder="gold" /></label>
+          <label><span>Nome completo</span><input value={newCompetitionName} onChange={(event) => setNewCompetitionName(event.target.value)} placeholder="Amatori UISP Gold" /></label>
+        </div><div className="entity-checks"><strong>Squadre Nerone partecipanti</strong><div className="checkbox-grid">{catalog.teams.filter((id) => id.startsWith('nerone')).map((id) => <label key={id}><input type="checkbox" checked={newCompetitionTeams.includes(id)} onChange={(event) => setNewCompetitionTeams(event.target.checked ? [...newCompetitionTeams, id] : newCompetitionTeams.filter((team) => team !== id))} />{id}</label>)}</div></div>
+          <p className="hint">Gli archivi delle partite e delle statistiche saranno disponibili dopo aver salvato la configurazione. Gli ID non potranno essere cambiati dall’interfaccia.</p><button className="button primary" onClick={createCompetition}>Aggiungi alla bozza</button>
+        </div>}
+      </div>}
 
       {project && section === 'players' && file && playerDoc && <div className="panel narrow"><span className="eyebrow">Profilo giocatore</span><h2>{String(playerDoc.get('name') ?? 'Nuovo giocatore')}</h2><div className="form-grid">{['id', 'name', 'birth_date', 'instagram', 'photo'].map((key) => <label key={key}><span>{key === 'birth_date' ? 'Data di nascita' : key === 'photo' ? 'Foto (/assets/...)' : key}</span><input value={String(playerDoc.get(key) ?? '')} readOnly={key === 'id'} onChange={(event) => updateYamlField(key, event.target.value)} /></label>)}<label className="wide"><span>Bio</span><textarea rows={8} value={String(playerDoc.get('bio') ?? '')} onChange={(event) => updateYamlField('bio', event.target.value)} /></label><label className="wide"><span>Contenuti social (un URL per riga)</span><textarea rows={4} value={playerSocialUrls(playerDoc).join('\n')} onChange={(event) => updateYamlField('social_urls', event.target.value.split('\n').map((value) => value.trim()).filter(Boolean))} /></label></div><p className="hint">Percorsi foto: importa prima l’immagine nella sezione Immagini. La carriera può restare discorsiva nella bio.</p></div>}
 

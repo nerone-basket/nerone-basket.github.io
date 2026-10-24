@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { CompetitionPageView } from '@/components/competition-page-view';
 import { getArchiveCompetitionIds, getLatestSeasonForCompetition } from '@/lib/archive-data';
 import { sportsData } from '@/lib/generated-data';
-import { competitions, getCompetition, seasonRouteId } from '@/lib/site-data';
+import { getCompetition, seasonRouteId } from '@/lib/site-data';
 
 export const dynamic = 'force-static';
 export const dynamicParams = false;
@@ -17,7 +17,7 @@ export function generateStaticParams() {
 
 function resolveRoute(value: string) {
   const season = sportsData.seasons.find((item) => seasonRouteId(item.id) === value);
-  if (season) return { competition: competitions[0], season };
+  if (season) return { competition: getCompetition(season.competitions[0]?.id), season };
 
   const competition = getCompetition(value);
   return { competition, season: competition ? getLatestSeasonForCompetition(competition.slug) : undefined };

@@ -1,4 +1,4 @@
-# WebMAKER Studio 0.1.1
+# WebMAKER Studio 0.2.0
 
 App Windows locale per aggiornare i contenuti del sito Nerone Basket Anzio. Il sito pubblico rimane in `site/` e GitHub Pages continua a pubblicare il branch `main` con il workflow esistente.
 
@@ -36,6 +36,8 @@ Le bozze auto salvate restano sul PC finché il file non viene salvato; anche i 
 ## Lavoro quotidiano dell'operatore
 
 - **Squadre / Giocatori / Roster:** gli ID restano stabili; i campi YAML o colonne CSV non gestiti dall'interfaccia vengono mantenuti. Per le foto importa prima l'immagine in **Immagini**, poi copia il percorso `/assets/...` nel profilo o nella notizia.
+- **Nuove squadre:** in **Squadre**, inserisci ID stabile, nome completo e breve. Aggiungila alla bozza, imposta i loghi se disponibili e premi **Salva sul PC**. Solo dopo il salvataggio compare nei menu delle partite e dei campionati. Gli ID esistenti non si rinominano.
+- **Stagioni e campionati:** in **Campionati** scegli la stagione, modifica nome, squadre Nerone partecipanti e punti classifica oppure crea un nuovo campionato. Puoi aggiungere anche una stagione e decidere separatamente quando renderla corrente. Salva la configurazione; in **Partite** e **Statistiche** appariranno i nuovi archivi CSV, creati sul disco quando salvi il primo contenuto. Gli ID restano fissi perché collegano gli archivi storici.
 - **Partite:** scegli stagione/campionato dal file, modifica data, squadre, punteggi e luogo. Una nuova partita riceve un ID unico che non cambia in seguito.
 - **Statistiche:** inserisci valori reali nel CSV; medie e totali sono calcolati dal sito. L'import CSV aggiunge solo coppie `game_id` + `player_id` nuove; non sovrascrive statistiche esistenti.
 - **Notizie:** Markdown con front matter YAML. Lo slug è derivato dal titolo alla creazione; titolo, data, copertina e collegamenti sono modificabili. L'anteprima Markdown è isolata in un iframe senza script.

@@ -26,13 +26,15 @@ export default function Home() {
   const nextClubTeamId = nextGame ? [nextGame.home_team, nextGame.away_team].find(isClubTeam) : undefined;
   const nextClubLogo = nextClubTeamId ? sportsData.teams[nextClubTeamId]?.logo_on_dark : undefined;
   const latestNews = [...sportsData.news].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+  const currentCompetitions = competitions.filter((competition) => sportsData.competitions.some((entry) => entry.id === competition.slug));
+  const currentSeasonLabel = sportsData.season.replace('-', '/');
   const nextGameContent = <>
     <p className="panel-label"><span>Prossima<br className="next-game-label-break" />{' '}partita</span></p>
     <div className="next-game-state">
       <img src={assetPath(nextClubLogo || '/assets/logo-bianco.png')} alt="" />
       <div>
         <strong>{nextGame ? `${nextHome} – ${nextAway}` : 'Calendario in aggiornamento'}</strong>
-        <span>{nextGame?.competitionName ?? 'Stagione 2026/27'}</span>
+        <span>{nextGame?.competitionName ?? `Stagione ${currentSeasonLabel}`}</span>
       </div>
     </div>
     <div className="next-game-meta">
@@ -82,18 +84,19 @@ export default function Home() {
             <h2 id="competitions-title">Segui il campionato</h2>
           </div>
           <p>
-            Nella stagione 26/27 le due squadre NERONE parteciperanno allo stesso
-            campionato Amatori UISP, con roster separati.
+            {currentCompetitions.length === 1
+              ? `Nella stagione ${currentSeasonLabel} le squadre Nerone condividono il campionato ${currentCompetitions[0].name}, con roster separati.`
+              : `Segui i ${currentCompetitions.length} campionati della stagione ${currentSeasonLabel}, con risultati e classifiche aggiornati.`}
           </p>
         </div>
 
-        <div className="competition-grid competition-grid-single">
-          {competitions.map((competition, index) => (
-            <Link href={sitePath(archivePath('campionato', competition.slug, '2026-27'))} className="competition-card" key={competition.slug}>
+        <div className={`competition-grid${currentCompetitions.length === 1 ? ' competition-grid-single' : ''}`}>
+          {currentCompetitions.map((competition, index) => (
+            <Link href={sitePath(archivePath('campionato', competition.slug, sportsData.season))} className="competition-card" key={competition.slug}>
               <span className="competition-index">0{index + 1}</span>
               <span className="competition-code">{competition.code}</span>
               <div>
-                <p>Due squadre · Stagione 2026/27</p>
+                <p>Stagione {currentSeasonLabel}</p>
                 <h3>{competition.name}</h3>
               </div>
               <ArrowRight size={24} aria-hidden="true" />
