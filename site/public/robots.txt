@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mich1803.github.io/nerone-basket-anzio/sitemap.xml
+Sitemap: https://nerone-basket.github.io/sitemap.xml

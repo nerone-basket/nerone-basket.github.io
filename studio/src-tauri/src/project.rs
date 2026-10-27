@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::{fs::{self, OpenOptions}, path::{Component, Path, PathBuf}, process::Command, sync::Mutex};
 use uuid::Uuid;
 
-pub const OFFICIAL_REMOTE: &str = "github.com/mich1803/nerone-basket-anzio";
+pub const OFFICIAL_REMOTE: &str = "github.com/nerone-basket/nerone-basket.github.io";
 
 #[derive(Default)]
 pub struct ProjectState(pub Mutex<Option<PathBuf>>);
@@ -34,7 +34,7 @@ fn git_bytes(root: &Path, args: &[&str]) -> Result<Vec<u8>, String> {
 pub fn official_remote(remote: &str) -> bool {
     let normalized = remote.trim().trim_end_matches('/').trim_end_matches(".git").to_ascii_lowercase();
     normalized == format!("https://{OFFICIAL_REMOTE}")
-        || normalized == format!("git@github.com:mich1803/nerone-basket-anzio")
+        || normalized == format!("git@github.com:nerone-basket/nerone-basket.github.io")
         || normalized == format!("ssh://git@{OFFICIAL_REMOTE}")
 }
 
@@ -212,9 +212,9 @@ mod tests {
     use super::*;
     #[test]
     fn accepts_only_official_remote() {
-        assert!(official_remote("https://github.com/mich1803/nerone-basket-anzio.git"));
-        assert!(official_remote("git@github.com:mich1803/nerone-basket-anzio.git"));
-        assert!(!official_remote("https://github.com/other/nerone-basket-anzio.git"));
+        assert!(official_remote("https://github.com/nerone-basket/nerone-basket.github.io.git"));
+        assert!(official_remote("git@github.com:nerone-basket/nerone-basket.github.io.git"));
+        assert!(!official_remote("https://github.com/mich1803/nerone-basket-anzio.git"));
     }
     #[test]
     fn rejects_traversal_and_absolute_paths() {

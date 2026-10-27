@@ -1,4 +1,4 @@
-export const SITE_URL = 'https://mich1803.github.io/nerone-basket-anzio';
+export const SITE_URL = 'https://nerone-basket.github.io';
 
 export function absoluteSiteUrl(path = '/') {
   if (path === '/') return `${SITE_URL}/`;

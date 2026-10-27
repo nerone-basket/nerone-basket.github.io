@@ -123,7 +123,7 @@ export function App() {
   }
   async function openProject() {
     if (!await preserveDraft()) return;
-    const chosen = await open({ directory: true, multiple: false, title: 'Seleziona la cartella principale di nerone-basket-anzio' });
+    const chosen = await open({ directory: true, multiple: false, title: 'Seleziona la cartella principale di nerone-basket.github.io' });
     if (typeof chosen !== 'string') return;
     await run(async () => {
       const loaded = await call<ProjectInfo>('open_project', { path: chosen });
@@ -329,7 +329,7 @@ export function App() {
         {(index === 0 || item.group !== sections[index - 1].group) && <p className="nav-group">{item.group}</p>}
         <button type="button" className={section === item.id ? 'active' : ''} onClick={() => void go(item.id)} disabled={!project && item.id !== 'dashboard'}>{item.label}{item.id === 'publish' && project?.changedFiles.length ? <b>{project.changedFiles.length}</b> : null}</button>
       </div>)}</nav>
-      <div className="sidebar-bottom"><span>v0.2.0 · desktop locale</span><span>Ctrl+S per salvare</span></div>
+      <div className="sidebar-bottom"><span>v0.2.1 · desktop locale</span><span>Ctrl+S per salvare</span></div>
     </aside>
     <main className="workspace">
       <header className="workspace-top"><div><span className="eyebrow">WebMAKER Studio</span><h1>{sections.find((item) => item.id === section)?.label}</h1></div><div className="top-actions"><span className="local-badge">{dirty ? 'Bozza non applicata' : 'Dati locali'}</span>{file && <><button className="button subtle" onClick={undo} disabled={!history.current.length}>Annulla</button><button className="button primary" onClick={() => void saveFile()} disabled={!dirty || busy}>Salva sul PC</button></>}</div></header>
@@ -337,7 +337,7 @@ export function App() {
       {section === 'dashboard' && <div className="dashboard">
         <div className="hero-panel"><span className="eyebrow">Una scrivania per il sito</span><h2>CONTENUTI<br /><em>SOTTO CONTROLLO.</em></h2><p>Partite, roster, statistiche e notizie restano file nel repository. Le bozze si salvano sul tuo PC; la pubblicazione è un passaggio separato e verificabile.</p><button className="button primary" onClick={() => void openProject()}>Apri progetto locale</button></div>
         {project ? <><div className="metric-grid"><div><small>BRANCH</small><strong>{project.branch}</strong></div><div><small>FILE MODIFICATI</small><strong>{project.changedFiles.length}</strong></div><div><small>ULTIMA SINCRONIZZAZIONE</small><strong className="metric-small">{formatTime(project.lastSync)}</strong></div></div><div className="panel"><div className="panel-heading"><h3>Stato della copia locale</h3><div className="button-row"><button className="text-action" onClick={() => void run(refreshProject)}>Aggiorna stato</button><button className="text-action" onClick={() => void run(async () => { setProject(await call<ProjectInfo>('sync_project')); }, 'Sincronizzazione completata.')}>Sincronizza da GitHub</button></div></div><p><b>Cartella:</b> {project.root}</p><p><b>Origin:</b> {project.remote}</p><div className="file-tags">{project.changedFiles.length ? project.changedFiles.map((path) => <code key={path}>{path}</code>) : <span>Nessuna modifica locale.</span>}</div></div></> : <div className="panel"><h3>Per iniziare</h3><p>Seleziona la cartella che contiene <code>.git</code> e <code>site/</code>. Studio accetta soltanto la repository Nerone con il remoto ufficiale.</p></div>}
-        <div className="panel"><h3>Anteprima e sito pubblico</h3><p>Studio mostra un’anteprima dei dati che stai inserendo. Il sito pubblico completo è renderizzato dalla build GitHub Pages; per una prova visiva completa usa l’ambiente di sviluppo del sito.</p><a href="https://mich1803.github.io/nerone-basket-anzio/graphic_generator_26" target="_blank" rel="noreferrer" className="text-action">Apri il generatore grafiche nel browser ↗</a></div>
+        <div className="panel"><h3>Anteprima e sito pubblico</h3><p>Studio mostra un’anteprima dei dati che stai inserendo. Il sito pubblico completo è renderizzato dalla build GitHub Pages; per una prova visiva completa usa l’ambiente di sviluppo del sito.</p><a href="https://nerone-basket.github.io/graphic_generator_26" target="_blank" rel="noreferrer" className="text-action">Apri il generatore grafiche nel browser ↗</a></div>
       </div>}
 
       {project && (section === 'games' || section === 'stats' || section === 'players' || section === 'news') && <div className="file-strip"><label>File <select value={file} onChange={(event) => void loadFile(event.target.value)}><option value="">Seleziona un file…</option>{files.map((path) => <option key={path} value={path}>{fileTitle(path)}</option>)}</select></label>{(section === 'players' || section === 'news') && <div className="create-inline"><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder={section === 'players' ? 'Nome nuovo giocatore' : 'Titolo nuova notizia'} /><button className="button subtle" onClick={() => void (section === 'players' ? newPlayer() : newNews())}>Crea</button></div>}</div>}

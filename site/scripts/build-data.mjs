@@ -8,7 +8,7 @@ const dataRoot = join(projectRoot, 'data');
 const contentRoot = join(projectRoot, 'content', 'news');
 const publicRoot = join(projectRoot, 'public');
 const errors = [];
-const siteUrl = 'https://mich1803.github.io/nerone-basket-anzio';
+const siteUrl = 'https://nerone-basket.github.io';
 
 function parseCsv(text) {
   const rows = [];

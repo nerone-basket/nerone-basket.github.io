@@ -1,4 +1,4 @@
-# WebMAKER Studio 0.2.0
+# WebMAKER Studio 0.2.1
 
 App Windows locale per aggiornare i contenuti del sito Nerone Basket Anzio. Il sito pubblico rimane in `site/` e GitHub Pages continua a pubblicare il branch `main` con il workflow esistente.
 
@@ -48,7 +48,7 @@ Le bozze auto salvate restano sul PC finché il file non viene salvato; anche i 
 
 Accedi a GitHub tramite Git Credential Manager, per esempio con un normale `git push` da terminale o GitHub Desktop, e lascia che sia Git a gestire la credenziale. Studio non chiede e non salva PAT.
 
-Per pubblicare usa una copia autorizzata sul branch `main` e il remote ufficiale `mich1803/nerone-basket-anzio`. Premi **Sincronizza da GitHub**, salva e valida, seleziona soltanto i file dati/media desiderati, leggi il dry run, scrivi un messaggio commit e digita `PUBBLICA SU MAIN`. Il backend esegue ancora `git fetch origin main` prima di stage/commit/push. Blocca branch diversi, remote diversi, file già in staging, divergenze e dati invalidi. Lo staging è limitato ai percorsi selezionati: mai `git add .`.
+Per pubblicare usa una copia autorizzata sul branch `main` e il remote ufficiale `nerone-basket/nerone-basket.github.io`. Premi **Sincronizza da GitHub**, salva e valida, seleziona soltanto i file dati/media desiderati, leggi il dry run, scrivi un messaggio commit e digita `PUBBLICA SU MAIN`. Il backend esegue ancora `git fetch origin main` prima di stage/commit/push. Blocca branch diversi, remote diversi, file già in staging, divergenze e dati invalidi. Lo staging è limitato ai percorsi selezionati: mai `git add .`.
 
 Se il push riesce, apri il link **Workflow Actions** mostrato da Studio. Attendi che build e deploy siano verdi prima di considerare aggiornato il sito pubblico. In caso di push fallito dopo il commit, Studio mostra lo SHA del commit locale: non ripetere automaticamente la procedura senza prima controllare lo stato Git.
 

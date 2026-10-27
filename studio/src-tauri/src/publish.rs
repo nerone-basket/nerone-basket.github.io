@@ -95,9 +95,9 @@ pub fn publish(paths: Vec<String>, message: String, confirmation: String, state:
     let commit = git(&root, &["rev-parse", "HEAD"])?;
     git(&root, &["push", "origin", "main"]).map_err(|error| format!("Commit locale {commit} creato, ma push non riuscito: {error}"))?;
     Ok(PublicationResult {
-        commit_url: format!("https://github.com/mich1803/nerone-basket-anzio/commit/{commit}"),
-        actions_url: "https://github.com/mich1803/nerone-basket-anzio/actions".into(),
-        site_url: "https://mich1803.github.io/nerone-basket-anzio/".into(),
+        commit_url: format!("https://github.com/nerone-basket/nerone-basket.github.io/commit/{commit}"),
+        actions_url: "https://github.com/nerone-basket/nerone-basket.github.io/actions".into(),
+        site_url: "https://nerone-basket.github.io/".into(),
         deploy_status: "Push riuscito; deploy GitHub Pages da verificare su Actions.".into(), commit,
     })
 }
@@ -134,7 +134,7 @@ mod tests {
         git(&root, &["init", "-b", "main"]).unwrap();
         git(&root, &["config", "user.name", "Studio Test"]).unwrap();
         git(&root, &["config", "user.email", "studio@example.test"]).unwrap();
-        git(&root, &["remote", "add", "origin", "https://github.com/mich1803/nerone-basket-anzio.git"]).unwrap();
+        git(&root, &["remote", "add", "origin", "https://github.com/nerone-basket/nerone-basket.github.io.git"]).unwrap();
         git(&root, &["add", "--", "site"]).unwrap();
         git(&root, &["commit", "-m", "Fixture"]).unwrap();
         let head = git(&root, &["rev-parse", "HEAD"]).unwrap();
