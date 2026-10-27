@@ -114,7 +114,6 @@ export default function Home() {
         </div>
         <div className="news-grid home-news-grid" data-count={latestNews.length}>
           {latestNews.map((news) => <Link href={sitePath(`/notizie/${news.slug}`)} className="news-card" key={news.slug}>
-            {news.cover ? <figure><img src={assetPath(news.cover)} alt="" /></figure> : <figure className="news-card-placeholder"><img src={assetPath('/assets/logo-testo-bianco.png')} alt="" /></figure>}
             <div>
               <p>{new Date(`${news.date}T12:00:00`).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               <h2>{news.title}</h2>

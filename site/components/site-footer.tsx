@@ -2,8 +2,6 @@ import Link from '@/components/site-link';
 import { assetPath, sitePath } from '@/lib/paths';
 
 export function SiteFooter() {
-  const configuredUrl = process.env.NEXT_PUBLIC_WEBMAKER_URL;
-  const webmakerUrl = configuredUrl && /^https:\/\//i.test(configuredUrl) ? configuredUrl : '';
   return (
     <footer className="site-footer">
       <div className="footer-brand">
@@ -17,7 +15,14 @@ export function SiteFooter() {
         <Link href={sitePath('/notizie')}>Notizie</Link>
         <Link href={sitePath('/club')}>Contatti e campo</Link>
       </nav>
-      <p className="footer-note">Nerone Basket Anzio · Stagione 2026/27 <span className="footer-credit">{webmakerUrl ? <a href={webmakerUrl} target="_blank" rel="noopener noreferrer">WebMAKER by PlayMAKER</a> : 'WebMAKER by PlayMAKER'}</span></p>
+      <p className="footer-note">
+        <span>Nerone Basket Anzio · Stagione 2026/27</span>
+        <span className="footer-credit">
+          Created with <a href="https://github.com/PlayMAKER-apps/tagmaker" target="_blank" rel="noopener noreferrer">WebMAKER</a>
+          {' '}by <a href="https://playmaker-apps.github.io/" target="_blank" rel="noopener noreferrer">PlayMAKER</a> Ecosystem
+          {' '}(an open source project by <a href="https://mich1803.github.io/portfolio/" target="_blank" rel="noopener noreferrer">Michele Magrini</a>)
+        </span>
+      </p>
     </footer>
   );
 }
