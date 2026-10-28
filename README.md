@@ -2,6 +2,8 @@
 
 Sito statico per risultati, classifiche, roster, calendario e notizie del Nerone Basket Anzio. Lo storico 2025/26 conserva il campionato Platinum; nella stagione 2026/27 Nerone e Nerone BGV partecipano all'Amatori UISP.
 
+Questa è una versione specializzata di [WebMAKER](https://github.com/PlayMAKER-apps/webmaker) per il Nerone Basket Anzio.
+
 ## Sviluppo locale
 
 ```powershell
@@ -14,7 +16,7 @@ Il sito viene pubblicato automaticamente su GitHub Pages quando le modifiche arr
 
 ## WebMAKER Studio (sviluppo)
 
-La nuova app Windows locale per gestire i contenuti è in [`studio/`](studio/README.md). Dati e sito restano file nel repository: lo Studio salva bozze sul PC, valida i contenuti e separa il salvataggio dalla pubblicazione. Sul branch di sviluppo il push è bloccato. Questa versione non aggiunge un pannello web `/admin` né cambia il workflow GitHub Pages.
+L'app Windows locale per gestire i contenuti è in [`studio/`](studio/README.md). Dati e sito restano file nel repository: lo Studio salva bozze sul PC, valida i contenuti e separa il salvataggio dalla pubblicazione. Questa versione non aggiunge un pannello web `/admin` né cambia il workflow GitHub Pages.
 
 I dati modificabili si trovano in `site/data`; gli articoli in `site/content/news`.
 

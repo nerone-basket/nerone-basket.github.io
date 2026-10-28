@@ -34,15 +34,11 @@ export default async function TeamRosterPage({ params }: { params: Promise<{ tea
     .sort((first, second) => second.localeCompare(first));
   const initialSeason = rosterSeasons.includes(sportsData.season) ? sportsData.season : rosterSeasons[0];
   const playersBySeason = Object.fromEntries(rosterSeasons.map((seasonId) => {
-    const season = sportsData.seasons.find((item) => item.id === seasonId);
     const memberships = sportsData.rosters.filter((entry) => entry.season === seasonId && entry.team_id === teamId && entry.active);
     const players = memberships.map((membership) => {
       const player = sportsData.players.find((item) => item.id === membership.player_id);
       if (!player) return null;
-      const appearances = new Set((season?.competitions ?? []).flatMap((competition) => competition.playerStats
-        .filter((stat) => stat.player_id === player.id)
-        .map((stat) => `${competition.id}:${stat.game_id}`))).size;
-      return { ...player, number: membership.number, appearances };
+      return { ...player, number: membership.number };
     }).filter((player): player is NonNullable<typeof player> => Boolean(player));
     return [seasonId, players];
   }));

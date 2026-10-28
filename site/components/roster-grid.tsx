@@ -9,11 +9,10 @@ type RosterCardPlayer = {
   id: string;
   name: string;
   number: number | null;
-  appearances: number;
   photo?: string;
 };
 
-type SortOption = 'surname' | 'number' | 'appearances';
+type SortOption = 'surname' | 'number';
 
 function surnameOf(name: string) {
   const value = name.trim().split(/\s+/).slice(1).join(' ');
@@ -43,9 +42,6 @@ export function RosterGrid({
   const [sortBy, setSortBy] = useState<SortOption>('number');
   const players = playersBySeason[season] ?? [];
   const sortedPlayers = useMemo(() => [...players].sort((first, second) => {
-    if (sortBy === 'appearances') {
-      return second.appearances - first.appearances || compareBySurname(first, second);
-    }
     if (sortBy === 'number') {
       const firstNumber = first.number ?? Number.POSITIVE_INFINITY;
       const secondNumber = second.number ?? Number.POSITIVE_INFINITY;
@@ -73,7 +69,6 @@ export function RosterGrid({
               <SelectContent>
                 <SelectItem value="surname">Cognome</SelectItem>
                 <SelectItem value="number">Numero di maglia</SelectItem>
-                <SelectItem value="appearances">Presenze</SelectItem>
               </SelectContent>
             </Select>
           </label>

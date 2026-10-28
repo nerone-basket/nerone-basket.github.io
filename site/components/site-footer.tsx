@@ -18,7 +18,7 @@ export function SiteFooter() {
       <p className="footer-note">
         <span>Nerone Basket Anzio · Stagione 2026/27</span>
         <span className="footer-credit">
-          Created with <a href="https://github.com/PlayMAKER-apps/tagmaker" target="_blank" rel="noopener noreferrer">WebMAKER</a>
+          Created with <a href="https://github.com/PlayMAKER-apps/webmaker" target="_blank" rel="noopener noreferrer">WebMAKER</a>
           {' '}by <a href="https://playmaker-apps.github.io/" target="_blank" rel="noopener noreferrer">PlayMAKER</a> Ecosystem
           {' '}(an open source project by <a href="https://mich1803.github.io/portfolio/" target="_blank" rel="noopener noreferrer">Michele Magrini</a>)
         </span>

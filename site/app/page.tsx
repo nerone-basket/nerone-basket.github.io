@@ -53,7 +53,7 @@ export default function Home() {
           <p className="eyebrow">Nerone Basket Anzio · Stagione 2026/27</p>
           <h1 id="hero-title"><span className="visually-hidden">Nerone Basket Anzio — </span>Black!</h1>
           <p className="hero-intro">
-            Risultati, classifiche, tabellini e notizie della stagione 26/27 del
+            Risultati, classifiche, video e notizie della stagione 26/27 del
             NERONE BASKET ANZIO.
           </p>
           <div className="hero-actions">

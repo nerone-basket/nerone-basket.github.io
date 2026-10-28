@@ -1,4 +1,4 @@
-# WebMAKER Studio 0.2.1
+# WebMAKER Studio 0.2.2
 
 App Windows locale per aggiornare i contenuti del sito Nerone Basket Anzio. Il sito pubblico rimane in `site/` e GitHub Pages continua a pubblicare il branch `main` con il workflow esistente.
 
@@ -28,7 +28,7 @@ Percorso rapido di test:
 2. In **Partite**, scegli `2026-27/platinum.csv`; modifica una partita di prova o creane una. Le righe CSV non toccate restano identiche, incluse colonne sconosciute.
 3. La bozza viene salvata automaticamente in `%LOCALAPPDATA%\WebMAKER Studio\...\drafts`; usa **Annulla** per tornare indietro nell'editor.
 4. Usa **Salva sul PC** per applicare la bozza al repository. Studio salva in modo atomico e crea una copia precedente in `%LOCALAPPDATA%\WebMAKER Studio\...\backups`.
-5. Usa **Pubblica → Valida** per controllare squadre, giocatori, roster, partite, statistiche e notizie. In **Anteprima commit / push** leggi i file selezionati e il diff. Nessun push viene fatto da questa schermata.
+5. Usa **Pubblica → Valida** per controllare squadre, giocatori, roster, partite e notizie. In **Anteprima commit / push** leggi i file selezionati e il diff. Nessun push viene fatto da questa schermata.
 6. Controlla con `git diff -- site/data/games/2026-27/platinum.csv`. Per ripartire, usa una copia/worktree di test o ripristina consapevolmente il file con Git.
 
 Le bozze auto salvate restano sul PC finché il file non viene salvato; anche i nuovi profili e articoli non ancora salvati ricompaiono nell'elenco alla riapertura. Se hai modificato lo stesso file da un altro programma, Studio blocca la sovrascrittura e conserva la bozza: riapri il file e confronta le versioni.
@@ -37,9 +37,8 @@ Le bozze auto salvate restano sul PC finché il file non viene salvato; anche i 
 
 - **Squadre / Giocatori / Roster:** gli ID restano stabili; i campi YAML o colonne CSV non gestiti dall'interfaccia vengono mantenuti. Per le foto importa prima l'immagine in **Immagini**, poi copia il percorso `/assets/...` nel profilo o nella notizia.
 - **Nuove squadre:** in **Squadre**, inserisci ID stabile, nome completo e breve. Aggiungila alla bozza, imposta i loghi se disponibili e premi **Salva sul PC**. Solo dopo il salvataggio compare nei menu delle partite e dei campionati. Gli ID esistenti non si rinominano.
-- **Stagioni e campionati:** in **Campionati** scegli la stagione, modifica nome, squadre Nerone partecipanti e punti classifica oppure crea un nuovo campionato. Puoi aggiungere anche una stagione e decidere separatamente quando renderla corrente. Salva la configurazione; in **Partite** e **Statistiche** appariranno i nuovi archivi CSV, creati sul disco quando salvi il primo contenuto. Gli ID restano fissi perché collegano gli archivi storici.
+- **Stagioni e campionati:** in **Campionati** scegli la stagione, modifica nome, squadre Nerone partecipanti e punti classifica oppure crea un nuovo campionato. Puoi aggiungere anche una stagione e decidere separatamente quando renderla corrente. Salva la configurazione; in **Partite** apparirà il nuovo archivio CSV, creato sul disco quando salvi il primo contenuto. Gli ID restano fissi perché collegano gli archivi storici.
 - **Partite:** scegli stagione/campionato dal file, modifica data, squadre, punteggi e luogo. Una nuova partita riceve un ID unico che non cambia in seguito.
-- **Statistiche:** inserisci valori reali nel CSV; medie e totali sono calcolati dal sito. L'import CSV aggiunge solo coppie `game_id` + `player_id` nuove; non sovrascrive statistiche esistenti.
 - **Notizie:** Markdown con front matter YAML. Lo slug è derivato dal titolo alla creazione; titolo, data, copertina e collegamenti sono modificabili. L'anteprima Markdown è isolata in un iframe senza script.
 - **Backup:** esporta un ZIP v1 di dati/notizie/immagini. Il ripristino standard aggiunge solo file assenti e segnala i conflitti. Il ripristino con sovrascrittura è una scelta separata e conserva una copia locale precedente.
 - **Generatore grafiche:** il generatore già pubblicato si apre nel browser; Studio non modifica il suo codice o il suo flusso.

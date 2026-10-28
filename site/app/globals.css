@@ -295,9 +295,7 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
 .bracket-final > p strong { color: #ed9aa1; }
 .postseason-closing-note { margin: 18px 0 0; color: #65625d; font-size: .78rem; font-style: italic; line-height: 1.5; }
 .game-map-link { display: inline-flex; align-items: center; gap: 8px; text-decoration: underline; text-underline-offset: 3px; }
-.player-social-section { padding-top: 0; border-top: 1px solid #cfccc4; }
-.social-embeds { width: 100%; margin-top: 58px; }
-.player-social-section .social-embeds { margin-top: 0; }
+.social-embeds { width: 100%; }
 .social-embeds h2 { margin: 0 0 22px; font-family: var(--display); font-size: clamp(2.2rem, 3.5vw, 3.5rem); text-transform: uppercase; }
 .social-embeds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 280px)); gap: 14px; justify-content: start; }
 .social-embed-card { width: 100%; max-width: 280px; overflow: hidden; background: #090909; color: #fff; }
@@ -371,19 +369,11 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
 .player-hero figure { position: relative; z-index: 2; align-self: end; height: 90%; margin: 0; }
 .player-hero figure img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
 .player-content { display: grid; grid-template-columns: minmax(300px, .7fr) minmax(0, 1.2fr); gap: 80px; }
-.player-content > *, .boxscore { min-width: 0; }
-.player-content h2, .boxscore h2 { margin: 0 0 25px; font-family: var(--display); font-size: clamp(3rem, 5vw, 5rem); line-height: .9; text-transform: uppercase; }
+.player-content > * { min-width: 0; }
+.player-content h2 { margin: 0 0 25px; font-family: var(--display); font-size: clamp(3rem, 5vw, 5rem); line-height: .9; text-transform: uppercase; }
+.player-social-panel h2 { font-size: clamp(2.2rem, 3.5vw, 3.5rem); }
 .player-bio { color: #56534e; line-height: 1.75; white-space: pre-line; }
-.player-stats-table, .boxscore-table { border-top: 3px solid #111; font-variant-numeric: tabular-nums; }
-.player-stats-block { min-width: 0; }
-.player-stats-block [data-slot="table-container"], .boxscore [data-slot="table-container"] { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; }
-.player-stats-table, .boxscore-table { min-width: 850px; }
-.player-stats-mode { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: -54px 0 24px; color: #77736c; font-size: .72rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.player-stats-mode span { transition: color 160ms ease; }
-.player-stats-mode span.active { color: var(--ink); }
-.player-stats-mode [data-slot='switch'] { background: #aaa69e; }
-.player-stats-mode [data-slot='switch'][data-checked] { background: var(--red); }
-.stats-empty { padding: 35px; background: #e5e2dc; color: #66635e; }
+.player-social-empty { margin: 0; padding: 30px; border-top: 3px solid #111; background: #e5e2dc; color: #66635e; line-height: 1.5; }
 
 .game-hero { padding: 175px clamp(24px, 6vw, 90px) 65px; background: #0a0a0a; color: #fff; }
 .game-hero > .eyebrow { margin-bottom: 16px; text-align: center; }
@@ -481,7 +471,6 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
   .player-card-name strong,
 .player-hero h1,
 .player-content h2,
-.boxscore h2,
 .scoreboard h1,
 .news-empty h2,
 .news-card h2,
@@ -498,7 +487,6 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
   .player-card-name strong,
 .player-hero h1,
 .player-content h2,
-.boxscore h2,
 .scoreboard h1,
 .news-card h2,
 .article-hero h1,
@@ -604,9 +592,6 @@ a.bracket-match:hover { border-color: #d56d76; transform: translateY(-2px); }
   .player-hero { min-height: 500px; padding-top: 120px; }
   .player-hero h1 { font-size: clamp(3rem, 13vw, 4.4rem); }
   .player-hero-copy { padding-bottom: 50px; }
-  .player-stats-mode { justify-content: flex-start; margin: 0 0 20px; }
-  .player-stats-table, .boxscore-table { min-width: 760px; font-size: .78rem; }
-  .player-stats-table th, .player-stats-table td, .boxscore-table th, .boxscore-table td { padding-inline: 6px; }
   .scoreboard { grid-template-columns: 1fr auto 1fr; gap: 9px; }
   .scoreboard img { width: 65px; height: 65px; }
   .scoreboard h1 { font-size: 2rem; }
