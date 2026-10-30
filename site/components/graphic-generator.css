@@ -34,6 +34,9 @@
 .gg-field input:focus-visible, .gg-field select:focus-visible { border-color: #d86670; box-shadow: 0 0 0 2px #d8667033; }
 .gg-field input::placeholder { color: #767d80; }
 .gg-field input[type=range] { width: 100%; height: 30px; margin: 0; accent-color: #c64f5b; }
+.gg-color-control { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 5px; border: 1px solid #485053; background: #111517; }
+.gg-color-field .gg-color-control input[type=color] { flex: 0 0 72px; width: 72px; min-height: 34px; height: 34px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.gg-color-field .gg-color-control input[type=text] { flex: 1; min-width: 0; height: 34px; padding: 0 4px; border: 0; background: transparent; color: #f7f6f2; font-size: 13px; font-family: monospace; letter-spacing: .04em; }
 .gg-help { margin: -5px 0 18px; color: #aeb2b3; font-size: 13px; line-height: 1.55; }
 .gg-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 17px; }
 .gg-actions button, .gg-csv-upload, .gg-add { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 12px; border: 1px solid #586063; background: #292f31; color: #fff; font-size: 12px; font-weight: 700; }
@@ -52,6 +55,9 @@
 .gg-upload span { font-size: 14px; font-weight: 700; }
 .gg-upload small { color: #9fa5a7; font-size: 11px; }
 .gg-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.gg-matchday-upload { margin-top: 18px; }
+.gg-remove-image { margin-top: 10px; padding: 8px 12px; border: 1px solid #586063; background: #292f31; color: #fff; font-size: 12px; }
+.gg-remove-image:hover { border-color: #d86670; }
 .gg-sliders { margin-top: 20px; }
 .gg-local-note { color: #9fa4a5; font-size: 12px; line-height: 1.5; }
 .gg-preview { position: sticky; top: 20px; padding: 22px; border: 1px solid #444b4d; background: #23282a; }

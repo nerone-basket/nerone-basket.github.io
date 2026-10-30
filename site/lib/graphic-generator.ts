@@ -19,6 +19,8 @@ export type GraphicState = {
   glasses: Glass[]; homeTeam: string; awayTeam: string;
   homeLogo: string; awayLogo: string; competition: string; dateTime: string; address: string;
   homeScore: string; awayScore: string; resultClubSide: 'home' | 'away' | 'none';
+  matchdayBackground: string; matchdaySubject: string; matchdayTeamName: string; matchdayPlayerName: string;
+  matchdayDate: string; matchdayTime: string; matchdaySubjectX: number; matchdaySubjectY: number; matchdaySubjectZoom: number;
 };
 
 export const SPONSORS = [
@@ -82,6 +84,45 @@ function containVisible(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x:
   const scale = Math.min(w / bounds.w, h / bounds.h);
   const dw = bounds.w * scale, dh = bounds.h * scale;
   ctx.drawImage(img, bounds.x, bounds.y, bounds.w, bounds.h, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+const footCache = new WeakMap<HTMLImageElement, { x: number; y: number }[]>();
+function visibleFeet(img: HTMLImageElement) {
+  const cached = footCache.get(img);
+  if (cached) return cached;
+  const bounds = visibleBounds(img);
+  const fallback = [
+    { x: bounds.x + bounds.w * .36, y: bounds.y + bounds.h },
+    { x: bounds.x + bounds.w * .64, y: bounds.y + bounds.h },
+  ];
+  const mask = document.createElement('canvas');
+  mask.width = img.naturalWidth; mask.height = img.naturalHeight;
+  const maskCtx = mask.getContext('2d', { willReadFrequently: true });
+  if (!maskCtx) return fallback;
+  try {
+    maskCtx.drawImage(img, 0, 0);
+    const pixels = maskCtx.getImageData(0, 0, mask.width, mask.height).data;
+    const mid = bounds.x + bounds.w / 2;
+    const bottom = [-1, -1];
+    const startY = Math.floor(bounds.y + bounds.h * .78);
+    for (let y = startY; y < bounds.y + bounds.h; y += 2) {
+      for (let x = bounds.x; x < bounds.x + bounds.w; x += 2) {
+        if (pixels[(y * mask.width + x) * 4 + 3] > 100) bottom[x < mid ? 0 : 1] = y;
+      }
+    }
+    const feet = fallback.map((point, side) => {
+      if (bottom[side] < 0) return point;
+      let sum = 0, count = 0;
+      const fromY = Math.max(startY, bottom[side] - Math.max(8, bounds.h * .035));
+      for (let y = Math.floor(fromY); y <= bottom[side]; y += 2) {
+        for (let x = side === 0 ? bounds.x : Math.floor(mid); x < (side === 0 ? mid : bounds.x + bounds.w); x += 2) {
+          if (pixels[(y * mask.width + x) * 4 + 3] > 100) { sum += x; count++; }
+        }
+      }
+      return { x: count ? sum / count : point.x, y: bottom[side] };
+    });
+    footCache.set(img, feet);
+    return feet;
+  } catch { return fallback; }
 }
 export async function sponsorGlassSize(sponsorId: string) {
   const sponsor = SPONSORS.find(item => item.id === sponsorId) ?? SPONSORS[3];
@@ -270,32 +311,103 @@ async function week(ctx: CanvasRenderingContext2D, s: GraphicState) {
   if (subject) cover(ctx, subject, 0, 0, 1080, canvasHeight, s.photoZoom, s.photoX, s.photoY);
   s.glasses.forEach((g, index) => { if (g.layer === 'front') drawGlass(g, index); });
 }
-async function matchday(ctx: CanvasRenderingContext2D, s: GraphicState) {
-  ctx.drawImage(await image('/assets/elementi_social/matchday_bg.png'), 0, 0, 1080, 1350);
-  ctx.fillStyle = '#fff';
-  const titleWidth = 620;
-  text(ctx, s.homeTeam.toUpperCase(), 62, 53, titleWidth, 100, 'Arimo, Arial, sans-serif', '700', 'left', 48);
-  text(ctx, s.awayTeam.toUpperCase(), 62, 171, titleWidth, 88, 'Arimo, Arial, sans-serif', '400', 'left', 44);
-  const vs = await optionalImage('/assets/elementi_social/vs.png');
-  if (vs) {
-    ctx.font = '700 100px Arimo, Arial, sans-serif';
-    const first = ctx.measureText(s.homeTeam.toUpperCase()).width;
-    ctx.font = '400 88px Arimo, Arial, sans-serif';
-    const second = ctx.measureText(s.awayTeam.toUpperCase()).width;
-    const shorter = Math.min(first, second, 500);
-    contain(ctx, vs, Math.min(590, 62 + shorter + 24), first < second ? 77 : 190, 65, 86);
+let matchdayGrain: HTMLCanvasElement | null = null;
+function drawMatchdayGrain(ctx: CanvasRenderingContext2D) {
+  if (!matchdayGrain) {
+    matchdayGrain = document.createElement('canvas');
+    matchdayGrain.width = 1080; matchdayGrain.height = 1350;
+    const grainCtx = matchdayGrain.getContext('2d')!;
+    const pixels = grainCtx.createImageData(1080, 1350);
+    let seed = 2026;
+    for (let i = 0; i < pixels.data.length; i += 4) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) | 0;
+      const value = seed >>> 24;
+      pixels.data[i] = pixels.data[i + 1] = pixels.data[i + 2] = value > 127 ? 255 : 0;
+      pixels.data[i + 3] = 3 + (value & 15);
+    }
+    grainCtx.putImageData(pixels, 0, 0);
   }
-  const photo = await optionalImage(s.photo);
-  if (photo) { ctx.save(); ctx.beginPath(); ctx.rect(62, 296, 620, 802); ctx.clip(); ctx.filter = 'grayscale(1)'; cover(ctx, photo, 62, 296, 620, 802, s.photoZoom, s.photoX, s.photoY); ctx.restore(); }
-  else { ctx.fillStyle = '#ffffff18'; ctx.fillRect(62, 296, 620, 802); ctx.fillStyle = '#fff9'; text(ctx, 'CARICA UNA FOTO', 372, 675, 530, 35, 'Arimo, Arial, sans-serif', '700', 'center'); }
+  ctx.drawImage(matchdayGrain, 0, 0);
+}
+function trackedText(ctx: CanvasRenderingContext2D, value: string, centerX: number, y: number, maxWidth: number, tracking: number) {
+  const letters = [...value.toUpperCase()];
+  const naturalWidth = letters.reduce((sum, letter) => sum + ctx.measureText(letter).width, 0) + tracking * (letters.length - 1);
+  const factor = Math.min(1, maxWidth / naturalWidth);
+  ctx.save(); ctx.translate(centerX, y); ctx.scale(factor, 1); ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  let x = -naturalWidth / 2;
+  for (const letter of letters) { ctx.fillText(letter, x, 0); x += ctx.measureText(letter).width + tracking; }
+  ctx.restore();
+}
+function matchdayDateLabel(value: string) {
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? 'DATA DA DEFINIRE'
+    : new Intl.DateTimeFormat('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(date).toUpperCase();
+}
+async function matchday(ctx: CanvasRenderingContext2D, s: GraphicState) {
+  ctx.fillStyle = /^#[0-9a-f]{6}$/i.test(s.matchdayBackground) ? s.matchdayBackground : '#c80b1d';
+  ctx.fillRect(0, 0, 1080, 1350);
+  const vignette = ctx.createRadialGradient(540, 560, 80, 540, 650, 940);
+  vignette.addColorStop(0, '#ffffff0d'); vignette.addColorStop(1, '#1900083d');
+  ctx.fillStyle = vignette; ctx.fillRect(0, 0, 1080, 1350);
+  drawMatchdayGrain(ctx);
+
+  ctx.fillStyle = '#f7f3ee';
+  ctx.font = 'italic 700 22px Georgia, serif';
+  trackedText(ctx, s.matchdayTeamName || 'NERONE BASKET ANZIO', 540, 62, 850, 7);
+  ctx.save();
+  ctx.font = '400 290px Anton, Impact, sans-serif';
+  const titleMetrics = ctx.measureText('GAME DAY');
+  const glyphHeight = titleMetrics.actualBoundingBoxAscent + titleMetrics.actualBoundingBoxDescent || 290;
+  ctx.translate(540, 135); ctx.scale(1, 430 / glyphHeight);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('GAME DAY', 0, titleMetrics.actualBoundingBoxAscent, 880);
+  ctx.restore();
+
   ctx.fillStyle = '#fff';
-  text(ctx, s.competition, 62, 1144, 625, 43, 'Arimo, Arial, sans-serif', '400', 'left', 27);
-  text(ctx, s.dateTime, 62, 1202, 625, 47, 'Arimo, Arial, sans-serif', '700', 'left', 28);
-  lines(ctx, s.address, 62, 1267, 625, 2, 32, 37, 'Arimo, Arial, sans-serif');
-  text(ctx, 'PRESENTED BY', 859, 1067, 280, 28, '"DM Sans", Arial, sans-serif', '700', 'center');
+  ctx.font = 'italic 700 30px Georgia, serif';
+  text(ctx, matchdayDateLabel(s.matchdayDate), 767, 594, 263, 30, 'Georgia, serif', 'italic 700', 'left', 23);
+  text(ctx, s.matchdayTime || 'ORARIO DA DEFINIRE', 767, 634, 263, 30, 'Georgia, serif', 'italic 700', 'left', 23);
+  lines(ctx, s.address || 'LUOGO DA DEFINIRE', 767, 679, 265, 3, 25, 31, 'Georgia, serif', 'italic 700');
+  const [home, away] = await Promise.all([optionalImage(s.homeLogo), optionalImage(s.awayLogo)]);
+  ctx.save(); ctx.filter = 'brightness(0) invert(1)';
+  if (home) containVisible(ctx, home, 766, 785, 104, 100);
+  if (away) containVisible(ctx, away, 900, 785, 104, 100);
+  ctx.restore();
+
+  ctx.fillStyle = '#f7f3ee';
+  ctx.font = '700 21px "DM Sans", Arial, sans-serif';
+  trackedText(ctx, 'POWERED BY', 206, 626, 270, 3);
   const sponsor = SPONSORS.find(item => item.id === s.sponsor) ?? SPONSORS[1];
-  const logo = await optionalImage(sponsor.logo);
-  if (logo) contain(ctx, logo, 770, 1124, 180, 180);
+  const sponsorLogo = await optionalImage(sponsor.logo);
+  if (sponsorLogo) containVisible(ctx, sponsorLogo, 78, 666, 255, 90);
+
+  const subject = await optionalImage(s.matchdaySubject);
+  if (subject) {
+    const bounds = visibleBounds(subject);
+    const scale = Math.min(450 / bounds.w, 885 / bounds.h) * s.matchdaySubjectZoom;
+    const width = bounds.w * scale, height = bounds.h * scale;
+    const x = 540 - width / 2 + s.matchdaySubjectX;
+    const y = 1200 - height + s.matchdaySubjectY;
+    const feet = visibleFeet(subject).map(point => ({ x: x + (point.x - bounds.x) * scale, y: y + (point.y - bounds.y) * scale }));
+    ctx.save(); ctx.filter = 'blur(24px)'; ctx.fillStyle = '#18000691';
+    ctx.beginPath(); ctx.ellipse((feet[0].x + feet[1].x) / 2 + 10, Math.max(feet[0].y, feet[1].y) + 17, Math.max(85, width * .29), 29, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    for (const foot of feet) {
+      ctx.save(); ctx.filter = 'blur(8px)'; ctx.fillStyle = '#100003ae';
+      ctx.beginPath(); ctx.ellipse(foot.x + 7, foot.y + 8, Math.max(37, width * .105), 13, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    ctx.save(); ctx.shadowColor = '#2700068c'; ctx.shadowBlur = 23; ctx.shadowOffsetX = 10; ctx.shadowOffsetY = 17;
+    ctx.drawImage(subject, bounds.x, bounds.y, bounds.w, bounds.h, x, y, width, height);
+    ctx.restore();
+  } else {
+    ctx.save(); ctx.strokeStyle = '#ffffff55'; ctx.lineWidth = 2; ctx.setLineDash([10, 12]);
+    ctx.strokeRect(374, 754, 330, 335); ctx.setLineDash([]);
+    ctx.fillStyle = '#fff9'; text(ctx, 'CARICA IL PNG DEL GIOCATORE', 540, 905, 290, 25, '"DM Sans", Arial, sans-serif', '700', 'center', 18);
+    ctx.restore();
+  }
+
+  ctx.fillStyle = '#f7f3ee';
+  ctx.font = 'italic 700 25px Georgia, serif';
+  trackedText(ctx, s.matchdayPlayerName || 'NOME GIOCATORE', 540, 1276, 815, 5);
 }
 async function risultato(ctx: CanvasRenderingContext2D, s: GraphicState) {
   ctx.fillStyle = '#171717'; ctx.fillRect(0, 0, 1080, 1350);
