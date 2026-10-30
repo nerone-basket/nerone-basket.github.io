@@ -358,7 +358,7 @@ async function matchday(ctx: CanvasRenderingContext2D, s: GraphicState) {
   ctx.font = '400 290px Anton, Impact, sans-serif';
   const titleMetrics = ctx.measureText('GAME DAY');
   const glyphHeight = titleMetrics.actualBoundingBoxAscent + titleMetrics.actualBoundingBoxDescent || 290;
-  ctx.translate(540, 135); ctx.scale(1, 430 / glyphHeight);
+  ctx.translate(540, 150); ctx.scale(1, 400 / glyphHeight);
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
   ctx.fillText('GAME DAY', 0, titleMetrics.actualBoundingBoxAscent, 880);
   ctx.restore();
